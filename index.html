@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#e07a5f" />
+    <title>Statistika Regresi Calculator</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        background: #fff4e6;
+        color: #5c2d0c;
+        margin: 0;
+        padding: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+      }
+      .container {
+        background: #fff8f0;
+        border-radius: 12px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 8px 24px rgba(217, 108, 60, 0.15);
+        display: flex;
+        flex-direction: column;
+      }
+      h1 {
+        font-weight: 700;
+        font-size: 1.8rem;
+        margin: 0 0 1rem 0;
+        color: #111827;
+        text-align: center;
+      }
+      label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #374151;
+        margin: 1rem 0 0.5rem 0;
+      }
+      textarea {
+        width: 100%;
+        height: 70px;
+        border: 1.5px solid #d96c3c;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        font-family: "Inter", monospace;
+        font-size: 1rem;
+        color: #7c4a0a;
+        resize: vertical;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        outline-offset: 2px;
+      }
+      textarea:focus {
+        border-color: #e07a5f;
+        box-shadow: 0 0 8px #e07a5f88;
+        outline: none;
+      }
+      button {
+        margin-top: 1.5rem;
+        background-color: #e07a5f;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.9rem 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 6px 12px rgba(224, 122, 95, 0.5);
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        user-select: none;
+      }
+      button:hover {
+        background-color: #c85d3e;
+        box-shadow: 0 8px 20px rgba(200, 93, 62, 0.6);
+      }
+      .output {
+        margin-top: 2rem;
+        color: #111827;
+        font-weight: 600;
+        font-size: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: opacity 0.5s ease, max-height 0.6s ease;
+      }
+      .output.show {
+        opacity: 1;
+        max-height: 100vh;
+      }
+      canvas {
+        margin-top: 2rem;
+        border-radius: 12px;
+        filter: drop-shadow(0 4px 6px rgba(217, 108, 60, 0.15));
+        max-width: 100%;
+        height: 320px;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+      }
+      canvas.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./sw.js")
+          .then(() => console.log("Service Worker registered"))
+          .catch((err) =>
+            console.error("Service Worker registration failed:", err)
+          );
+      }
+    </script>
+    <div
+      class="container"
+      role="main"
+      aria-label="Statistika Regresi Calculator"
+    >
+      <h1>Statistika Regresi</h1>
+      <h3 align="center">Oleh Nabil Hassya Aldhean XI.G/24</h3>
+      <label for="xValues">Masukkan data X (dipisah koma atau spasi):</label>
+      <textarea
+        id="xValues"
+        placeholder="1, 2, 3, 4, 5"
+        aria-describedby="xHelp"
+      ></textarea>
+      <span id="xHelp" class="sr-only"
+        >Input nilai X, dipisah dengan koma atau spasi.</span
+      >
+
+      <label for="yValues">Masukkan data Y (dipisah koma atau spasi):</label>
+      <textarea
+        id="yValues"
+        placeholder="2, 4, 5, 4, 5"
+        aria-describedby="yHelp"
+      ></textarea>
+      <span id="yHelp" class="sr-only"
+        >Input nilai Y, dipisah dengan koma atau spasi.</span
+      >
+
+      <button
+        id="calculateBtn"
+        aria-label="Hitung persamaan regresi dan statistik lainnya"
+      >
+        Hitung
+      </button>
+
+      <section
+        class="output"
+        id="output"
+        aria-live="polite"
+        aria-atomic="true"
+        role="region"
+        tabindex="0"
+      >
+        <p id="regressionEquation"></p>
+        <p id="correlationCoefficient"></p>
+        <p id="coefficientDetermination"></p>
+      </section>
+      <canvas
+        id="regressionChart"
+        width="500"
+        height="320"
+        role="img"
+        aria-label="Grafik Regresi Linier"
+      ></canvas>
+    </div>
+    <script>
+      (function () {
+        const calculateBtn = document.getElementById("calculateBtn");
+        const output = document.getElementById("output");
+        const regressionEquationP =
+          document.getElementById("regressionEquation");
+        const correlationCoefficientP = document.getElementById(
+          "correlationCoefficient"
+        );
+        const coefficientDeterminationP = document.getElementById(
+          "coefficientDetermination"
+        );
+        const canvas = document.getElementById("regressionChart");
+        const ctx = canvas.getContext("2d");
+
+        function parseInput(input) {
+          return input
+            .split(/[\s,]+/)
+            .map((v) => parseFloat(v.trim()))
+            .filter((v) => !isNaN(v));
+        }
+
+        function mean(arr) {
+          return arr.reduce((acc, val) => acc + val, 0) / arr.length;
+        }
+
+        function calculateRegression(x, y) {
+          const n = x.length;
+          const xMean = mean(x);
+          const yMean = mean(y);
+
+          let numerator = 0;
+          let denominator = 0;
+          for (let i = 0; i < n; i++) {
+            numerator += (x[i] - xMean) * (y[i] - yMean);
+            denominator += (x[i] - xMean) ** 2;
+          }
+          if (denominator === 0) {
+            throw new Error(
+              "Variance of X is zero. Regression can't be calculated."
+            );
+          }
+          const b = numerator / denominator;
+          const a = yMean - b * xMean;
+          return { a, b };
+        }
+
+        function calculateCorrelationCoefficient(x, y) {
+          const n = x.length;
+          const xMean = mean(x);
+          const yMean = mean(y);
+
+          let numerator = 0;
+          let denomX = 0;
+          let denomY = 0;
+
+          for (let i = 0; i < n; i++) {
+            numerator += (x[i] - xMean) * (y[i] - yMean);
+            denomX += (x[i] - xMean) ** 2;
+            denomY += (y[i] - yMean) ** 2;
+          }
+          if (denomX === 0 || denomY === 0) {
+            throw new Error(
+              "Variance of X or Y is zero, correlation is undefined."
+            );
+          }
+          return numerator / Math.sqrt(denomX * denomY);
+        }
+
+        function drawChart(x, y, a, b) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const padding = 40;
+          const xMin = Math.min(...x);
+          const xMax = Math.max(...x);
+          const yMin = Math.min(...y);
+          const yMax = Math.max(...y);
+          const xRange = xMax - xMin || 1;
+          const yRange = yMax - yMin || 1;
+          const scaleX = (canvas.width - 2 * padding) / xRange;
+          const scaleY = (canvas.height - 2 * padding) / yRange;
+
+          // Draw axes
+          ctx.strokeStyle = "#7c4a0a";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(padding, padding);
+          ctx.lineTo(padding, canvas.height - padding);
+          ctx.lineTo(canvas.width - padding, canvas.height - padding);
+          ctx.stroke();
+
+          // Draw scatter points
+          ctx.fillStyle = "#d96c3c";
+          x.forEach((val, i) => {
+            const px = padding + (val - xMin) * scaleX;
+            const py = canvas.height - padding - (y[i] - yMin) * scaleY;
+            ctx.beginPath();
+            ctx.arc(px, py, 5, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          // Draw regression line
+          ctx.strokeStyle = "#a33e1c";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+
+          const xStart = xMin;
+          const yStart = a + b * xStart;
+          const xEnd = xMax;
+          const yEnd = a + b * xEnd;
+          const startX = padding + (xStart - xMin) * scaleX;
+          const startY = canvas.height - padding - (yStart - yMin) * scaleY;
+          const endX = padding + (xEnd - xMin) * scaleX;
+          const endY = canvas.height - padding - (yEnd - yMin) * scaleY;
+
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+
+          // Axis labels
+          ctx.fillStyle = "#a35c10";
+          ctx.font = "12px Inter, sans-serif";
+          ctx.fillText(
+            "X",
+            canvas.width - padding + 10,
+            canvas.height - padding + 15
+          );
+          ctx.fillText("Y", padding - 15, padding - 10);
+
+          // Title
+          ctx.font = "bold 16px Inter, sans-serif";
+          ctx.fillStyle = "#5c2d0c";
+          ctx.fillText("Grafik Regresi Linier", padding + 80, padding - 15);
+        }
+
+        calculateBtn.addEventListener("click", () => {
+          try {
+            const xRaw = document.getElementById("xValues").value;
+            const yRaw = document.getElementById("yValues").value;
+            const x = parseInput(xRaw);
+            const y = parseInput(yRaw);
+
+            if (x.length === 0 || y.length === 0) {
+              alert("Mohon masukkan data X dan Y!");
+              output.classList.remove("show");
+              canvas.classList.remove("show");
+              return;
+            }
+            if (x.length !== y.length) {
+              alert("Jumlah data X dan Y harus sama!");
+              output.classList.remove("show");
+              canvas.classList.remove("show");
+              return;
+            }
+
+            const { a, b } = calculateRegression(x, y);
+            const r = calculateCorrelationCoefficient(x, y);
+            const r2 = r ** 2;
+
+            regressionEquationP.textContent = `Persamaan Regresi: ŷ = ${a.toFixed(
+              4
+            )} + ${b.toFixed(4)}x`;
+            correlationCoefficientP.textContent = `Koefisien Korelasi (r): ${r.toFixed(
+              4
+            )}`;
+            coefficientDeterminationP.textContent = `Koefisien Determinasi (r²): ${r2.toFixed(
+              4
+            )}`;
+            output.classList.add("show");
+
+            canvas.classList.add("show");
+            drawChart(x, y, a, b);
+          } catch (error) {
+            alert(error.message);
+            output.classList.remove("show");
+            canvas.classList.remove("show");
+            console.error(error);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
