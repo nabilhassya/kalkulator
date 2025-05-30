@@ -13,7 +13,6 @@
     .animate-fade-in { animation: fade-in 0.7s ease; }
     @keyframes slide-in-up { from{opacity:0;transform:translateY(40px);} to{opacity:1;transform:translateY(0);} }
     .animate-slide-in-up { animation: slide-in-up 0.9s cubic-bezier(.4,2,.2,1);}
-    /* Custom scrollbar for data table */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-thumb { background: #67e8f9; border-radius: 10px; }
     ::-webkit-scrollbar-track { background: #e0f2fe; }
@@ -21,6 +20,14 @@
 </head>
 <body class="bg-gradient-to-br from-sky-100 via-emerald-100 to-cyan-100 min-h-screen flex flex-col items-center p-6 font-sans">
   <h1 class="text-3xl md:text-4xl font-extrabold text-cyan-800 mb-6 animate-fade-in drop-shadow-lg tracking-tight">Aplikasi Regresi Linear Interaktif</h1>
+  
+  <!-- Identitas -->
+  <div class="mb-4 animate-fade-in text-center">
+    <span class="inline-block bg-gradient-to-r from-cyan-200 to-emerald-200 text-cyan-900 font-bold px-6 py-2 rounded-xl shadow">
+      Nabil Hassya Aldhean XI.G/24
+    </span>
+  </div>
+  
   <div class="bg-white/90 rounded-xl shadow-2xl p-6 w-full max-w-2xl animate-slide-in-up mb-8 border-2 border-cyan-100">
     <h2 class="text-2xl font-semibold mb-4 text-emerald-600 tracking-tight">Input Data</h2>
     <div class="flex flex-col md:flex-row gap-2 mb-3">
